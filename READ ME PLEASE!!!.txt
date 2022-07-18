@@ -1,0 +1,5 @@
+you must add
+
+	<haxeflag name="-dce" value="no" />
+
+in your Project.xml or edited FlxSave will not function properly.
