@@ -16,6 +16,7 @@ class FieldMacro
 
 		var Fields:Field = null;
 		var FieldsExpr:Expr = null;
+		var FlushExpr:Expr = null;
 
 		var debug:String = "";
 
@@ -32,6 +33,7 @@ class FieldMacro
 								case FVar(macro:FlxSave, e):
 									Fields = field;
 									FieldsExpr = {expr: EField(e, 'data'), pos: e.pos};
+									FlushExpr = {expr: EField(e, 'flush'), pos: e.pos};
 									continue;
 								case _:
 							}
@@ -127,6 +129,17 @@ class FieldMacro
 					pos: currentPos
 				};
 
+				var ___Expr:Expr = {
+					expr: EBlock([
+						macro $e{Extra} = $e{e},
+						{
+							expr: ECall(FlushExpr, []),
+							pos: currentPos
+						}
+					]),
+					pos: currentPos
+				};
+
 				var GetterFunc:Expr = {
 					expr: EBlock([
 						{
@@ -136,7 +149,7 @@ class FieldMacro
 									pos: currentPos
 								}),
 								pos: currentPos
-							}, macro $e{Extra} = $e{e}, null),
+							}, ___Expr, null),
 							pos: currentPos
 						},
 						{
@@ -158,16 +171,28 @@ class FieldMacro
 					pos: currentPos,
 				};
 
-				var SetterFunc = EReturn(macro $e{Extra} = $i{'value'});
+				var ___Expr:Expr = {
+					expr: EBlock([
+						macro $e{Extra} = $i{'value'},
+						{
+							expr: ECall(FlushExpr, []),
+							pos: currentPos
+						},
+						{
+							expr: EReturn(macro $e{Extra}),
+							pos: currentPos
+						}
+					]),
+					pos: currentPos
+				};
+
+				var SetterFunc = ___Expr; // EReturn(macro $e{Extra} = $i{'value'});
 
 				var Setter:Field = {
 					name: "set_" + FieldName,
 					access: [Access.AInline, Access.AStatic],
 					kind: FieldType.FFun({
-						expr: {
-							expr: SetterFunc,
-							pos: currentPos,
-						},
+						expr: SetterFunc,
 						args: [
 							{
 								name: "value",
